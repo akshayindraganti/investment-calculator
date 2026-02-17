@@ -198,11 +198,11 @@ export default function CategoryChart({ data }: Props) {
             </div>
 
             {/* Compact Custom Legend */}
-            <div className="mt-5 flex justify-center gap-4 text-xs text-gray-700">
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-700 text-center">
                 {data.map((item) => (
                     <div
                         key={item.category}
-                        className="flex items-center gap-1.5"
+                        className="flex items-center justify-center gap-1.5"
                     >
                         <span
                             className="h-2 w-2 rounded-full"
@@ -220,6 +220,7 @@ export default function CategoryChart({ data }: Props) {
                     </div>
                 ))}
             </div>
+
         </div>
     )
 }
