@@ -8,22 +8,22 @@ type Props = {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "Large Cap":     "#4f90f7",
-  "Mid Cap":       "#fbbf24",
-  "Small Cap":     "#34d399",
+  "Large Cap": "#4f90f7",
+  "Mid Cap": "#fbbf24",
+  "Small Cap": "#34d399",
   "Gold & Silver": "#f59e0b",
 }
 
 // Fund structure used in tooltip & legend suggestions
 const FUND_STRUCTURE = [
-  { category: "Large Cap",     fundName: "Nifty 50",          percentage: 25  },
-  { category: "Large Cap",     fundName: "Nifty Next 50",     percentage: 15  },
-  { category: "Large Cap",     fundName: "Nifty Bank",        percentage: 10  },
-  { category: "Mid Cap",       fundName: "Nifty Midcap 150",  percentage: 25  },
-  { category: "Small Cap",     fundName: "Quant Small Cap",   percentage: 7.5 },
-  { category: "Small Cap",     fundName: "Nippon Small Cap",  percentage: 7.5 },
-  { category: "Gold & Silver", fundName: "Gold",              percentage: 7   },
-  { category: "Gold & Silver", fundName: "Silver",            percentage: 3   },
+  { category: "Large Cap", fundName: "Nifty 50", percentage: 25 },
+  { category: "Large Cap", fundName: "Nifty Next 50", percentage: 15 },
+  { category: "Large Cap", fundName: "Nifty Bank", percentage: 10 },
+  { category: "Mid Cap", fundName: "Nifty Midcap 150", percentage: 25 },
+  { category: "Small Cap", fundName: "Quant Small Cap", percentage: 7.5 },
+  { category: "Small Cap", fundName: "Nippon Small Cap", percentage: 7.5 },
+  { category: "Gold & Silver", fundName: "Gold", percentage: 7 },
+  { category: "Gold & Silver", fundName: "Silver", percentage: 3 },
 ]
 
 const FUNDS_BY_CATEGORY = FUND_STRUCTURE.reduce<Record<string, typeof FUND_STRUCTURE>>(
@@ -49,8 +49,8 @@ type ChartTooltipProps = {
 
 function ChartTooltip({ active, payload, totalAmount }: ChartTooltipProps) {
   if (!active || !payload?.length) return null
-  const category     = String(payload[0].name ?? "")
-  const categoryAmt  = Number(payload[0].value ?? 0)
+  const category = String(payload[0].name ?? "")
+  const categoryAmt = Number(payload[0].value ?? 0)
   if (!category) return null
 
   const funds = FUNDS_BY_CATEGORY[category] ?? []
@@ -60,9 +60,9 @@ function ChartTooltip({ active, payload, totalAmount }: ChartTooltipProps) {
     <div
       className="rounded-xl p-3.5 text-xs min-w-[210px]"
       style={{
-        background:  "var(--tooltip-bg)",
-        border:      "1px solid var(--tooltip-border)",
-        boxShadow:   "var(--tooltip-shadow)",
+        background: "var(--tooltip-bg)",
+        border: "1px solid var(--tooltip-border)",
+        boxShadow: "var(--tooltip-shadow)",
       }}
     >
       <div className="flex items-center gap-2 mb-2">
@@ -118,13 +118,13 @@ export default function CategoryChart({ data }: Props) {
   }, [data])
 
   return (
-    <div ref={containerRef} className="card-surface rounded-2xl p-5 h-full flex flex-col">
+    <div ref={containerRef} className="card-surface rounded-2xl p-4 sm:p-5 h-full flex flex-col overflow-x-hidden">
       <p className="text-[10px] app-t5 uppercase tracking-[0.14em] font-semibold mb-5">
         Allocation Breakdown
       </p>
 
       {/* Donut chart */}
-      <div className="relative h-52">
+      <div className="relative h-44 sm:h-52">
         <ResponsiveContainer>
           <PieChart>
             <Pie
@@ -153,16 +153,16 @@ export default function CategoryChart({ data }: Props) {
       {/* Category legend — with suggested fund names */}
       <div className="mt-5 space-y-4 flex-1">
         {data.map((item) => {
-          const color     = CATEGORY_COLORS[item.category] ?? "#ccc"
+          const color = CATEGORY_COLORS[item.category] ?? "#ccc"
           const fundNames = (FUNDS_BY_CATEGORY[item.category] ?? [])
             .map((f) => f.fundName)
             .join(" · ")
 
           return (
             <div key={item.category}>
-              <div className="flex items-start justify-between text-xs mb-1.5 gap-2">
+              <div className="flex items-start justify-between text-xs mb-1.5 gap-2 min-w-0">
                 {/* Category + fund names */}
-                <div className="flex items-start gap-2 min-w-0">
+                <div className="flex items-start gap-2 min-w-0 flex-1">
                   <span
                     className="w-2 h-2 rounded-full shrink-0 mt-1"
                     style={{ background: color }}
@@ -176,7 +176,7 @@ export default function CategoryChart({ data }: Props) {
                 </div>
 
                 {/* Amount + percentage */}
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 pl-1">
                   <span className="font-data app-t4 text-[11px]">
                     ₹{item.amount.toLocaleString("en-IN")}
                   </span>

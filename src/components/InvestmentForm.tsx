@@ -3,8 +3,8 @@ import { Wallet, ArrowRight } from "lucide-react"
 import gsap from "gsap"
 
 const PRESETS = [
-  { label: "1L",  value: 100000  },
-  { label: "5L",  value: 500000  },
+  { label: "1L", value: 100000 },
+  { label: "5L", value: 500000 },
   { label: "10L", value: 1000000 },
   { label: "25L", value: 2500000 },
   { label: "50L", value: 5000000 },
@@ -15,8 +15,8 @@ type Props = {
 }
 
 export default function InvestmentForm({ onCalculate }: Props) {
-  const DEFAULT_AMOUNT = 300000
-  const [amount,      setAmount]      = useState(DEFAULT_AMOUNT.toString())
+  const DEFAULT_AMOUNT = 10000
+  const [amount, setAmount] = useState(DEFAULT_AMOUNT.toString())
   const [activePreset, setActivePreset] = useState<number | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -78,9 +78,8 @@ export default function InvestmentForm({ onCalculate }: Props) {
               key={p.value}
               type="button"
               onClick={() => handlePreset(p.value)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-semibold ${
-                activePreset === p.value ? "preset-btn-active" : "preset-btn"
-              }`}
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold ${activePreset === p.value ? "preset-btn-active" : "preset-btn"
+                }`}
             >
               {p.label}
             </button>

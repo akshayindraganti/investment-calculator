@@ -6,7 +6,7 @@ import gsap from "gsap"
 import { Activity, BarChart3, Layers, Moon, Sun, TrendingUp } from "lucide-react"
 
 const CategoryChart = lazy(() => import("./components/CategoryChart"))
-const FundBreakdown  = lazy(() => import("./components/FundBreakdown"))
+const FundBreakdown = lazy(() => import("./components/FundBreakdown"))
 
 // ─── Animated number counter stat card ───────────────────────────────────────
 type StatProps = {
@@ -17,7 +17,7 @@ type StatProps = {
 }
 
 function AnimatedStat({ label, value, prefix = "", Icon }: StatProps) {
-  const ref  = useRef<HTMLSpanElement>(null)
+  const ref = useRef<HTMLSpanElement>(null)
   const prev = useRef(0)
 
   useEffect(() => {
@@ -60,11 +60,11 @@ function AnimatedStat({ label, value, prefix = "", Icon }: StatProps) {
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 function App() {
-  const [funds,       setFunds]       = useState<FundAllocation[]>([])
-  const [categories,  setCategories]  = useState<CategoryAllocation[]>([])
-  const [total,       setTotal]       = useState(0)
+  const [funds, setFunds] = useState<FundAllocation[]>([])
+  const [categories, setCategories] = useState<CategoryAllocation[]>([])
+  const [total, setTotal] = useState(0)
   const [showResults, setShowResults] = useState(false)
-  const [isDark,      setIsDark]      = useState(() =>
+  const [isDark, setIsDark] = useState(() =>
     localStorage.getItem("theme") !== "light"
   )
   const resultsRef = useRef<HTMLDivElement>(null)
@@ -82,7 +82,7 @@ function App() {
   }, [isDark])
 
   const handleCalculate = (amount: number) => {
-    const newFunds      = calculateFundAllocation(amount)
+    const newFunds = calculateFundAllocation(amount)
     const newCategories = calculateCategoryAllocation(amount)
     setFunds(newFunds)
     setCategories(newCategories)
@@ -148,7 +148,7 @@ function App() {
               className="theme-toggle w-7 h-7 rounded-lg flex items-center justify-center"
             >
               {isDark
-                ? <Sun  className="w-3.5 h-3.5 text-[#06d6a0]" />
+                ? <Sun className="w-3.5 h-3.5 text-[#06d6a0]" />
                 : <Moon className="w-3.5 h-3.5 text-[#06d6a0]" />}
             </button>
           </div>
@@ -170,10 +170,10 @@ function App() {
             >
               {/* Stats row */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-5">
-                <AnimatedStat label="Total Investment" value={total}            prefix="₹" Icon={TrendingUp} />
-                <AnimatedStat label="Asset Classes"    value={categories.length}           Icon={Layers}    />
+                <AnimatedStat label="Total Investment" value={total} prefix="₹" Icon={TrendingUp} />
+                <AnimatedStat label="Asset Classes" value={categories.length} Icon={Layers} />
                 <div className="col-span-2 sm:col-span-1">
-                  <AnimatedStat label="Instruments"    value={funds.length}                Icon={BarChart3} />
+                  <AnimatedStat label="Instruments" value={funds.length} Icon={BarChart3} />
                 </div>
               </div>
 
