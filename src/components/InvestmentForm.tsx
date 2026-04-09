@@ -1,99 +1,118 @@
 import { useEffect, useRef, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Wallet } from "lucide-react"
+import { Wallet, ArrowRight } from "lucide-react"
 import gsap from "gsap"
 
+const PRESETS = [
+  { label: "1L",  value: 100000  },
+  { label: "5L",  value: 500000  },
+  { label: "10L", value: 1000000 },
+  { label: "25L", value: 2500000 },
+  { label: "50L", value: 5000000 },
+]
+
 type Props = {
-    onCalculate: (amount: number) => void
+  onCalculate: (amount: number) => void
 }
 
 export default function InvestmentForm({ onCalculate }: Props) {
-    const defaultAmount = 300000
-    const [amount, setAmount] = useState(
-        defaultAmount.toString()
-    )
+  const DEFAULT_AMOUNT = 300000
+  const [amount,      setAmount]      = useState(DEFAULT_AMOUNT.toString())
+  const [activePreset, setActivePreset] = useState<number | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-    const containerRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (!containerRef.current) return
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        containerRef.current,
+        { y: -16, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
+      )
+    }, containerRef)
+    return () => ctx.revert()
+  }, [])
 
-    // Entrance animation
-    useEffect(() => {
-        if (!containerRef.current) return
+  useEffect(() => {
+    onCalculate(DEFAULT_AMOUNT)
+  }, [onCalculate])
 
-        const ctx = gsap.context(() => {
-            gsap.fromTo(
-                containerRef.current,
-                { y: -30, opacity: 0 },
-                {
-                    y: 0,
-                    opacity: 1,
-                    duration: 0.9,
-                    ease: "power3.out",
-                }
-            )
-        }, containerRef)
+  const handlePreset = (value: number) => {
+    setAmount(value.toString())
+    setActivePreset(value)
+    onCalculate(value)
+  }
 
-        return () => ctx.revert()
-    }, [])
+  const handleSubmit = (e: { preventDefault(): void }) => {
+    e.preventDefault()
+    const num = Number(amount)
+    if (!num || num <= 0) return
+    setActivePreset(null)
+    onCalculate(num)
+  }
 
-    useEffect(() => {
-        onCalculate(defaultAmount)
-    }, [onCalculate])
+  return (
+    <div ref={containerRef} className="card-surface rounded-2xl px-6 py-5">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-5">
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        const numeric = Number(amount)
-        if (!numeric || numeric <= 0) return
-        onCalculate(numeric)
-    }
-
-    return (
-        <div
-            ref={containerRef}
-            className="bg-white/80 backdrop-blur-md shadow-xl rounded-3xl px-10 py-8 border border-gray-100"
-        >
-            <form
-                onSubmit={handleSubmit}
-                className="flex flex-col md:flex-row items-center justify-between gap-6"
-            >
-                {/* Left Section */}
-                <div className="flex items-center gap-4">
-                    <div className="bg-blue-100 p-3 rounded-xl">
-                        <Wallet className="text-blue-600 w-6 h-6" />
-                    </div>
-
-                    <div>
-                        <p className="text-sm text-gray-500">
-                            Investment Amount
-                        </p>
-                        <h2 className="text-xl font-semibold">
-                            Allocate Your Capital
-                        </h2>
-                    </div>
-                </div>
-
-                {/* Right Section */}
-                <div className="flex items-center gap-4 w-full md:w-auto">
-                    <div className="relative w-full md:w-64">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                            ₹
-                        </span>
-                        <Input
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            className="pl-8 h-11 rounded-xl focus-visible:ring-2 focus-visible:ring-blue-400 transition-all"
-                        />
-                    </div>
-
-                    <Button
-                        type="submit"
-                        className="h-11 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300"
-                    >
-                        Allocate
-                    </Button>
-                </div>
-            </form>
+        {/* Brand label */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div
+            className="p-2.5 rounded-xl"
+            style={{ background: "rgba(6,214,160,0.08)", border: "1px solid rgba(6,214,160,0.18)" }}
+          >
+            <Wallet className="w-4 h-4 text-[#06d6a0]" />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.14em] app-t6">CAPITAL</p>
+            <p className="text-sm font-semibold app-t2">Allocate Investment</p>
+          </div>
         </div>
-    )
+
+        {/* Vertical separator (desktop) */}
+        <div className="sep-v hidden lg:block" />
+
+        {/* Preset buttons */}
+        <div className="flex gap-2 flex-wrap">
+          {PRESETS.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => handlePreset(p.value)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold ${
+                activePreset === p.value ? "preset-btn-active" : "preset-btn"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Amount input + submit */}
+        <form onSubmit={handleSubmit} className="flex items-center gap-3 lg:ml-auto">
+          <div className="relative">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 app-t4 text-sm font-data select-none pointer-events-none">
+              ₹
+            </span>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => {
+                setAmount(e.target.value)
+                setActivePreset(null)
+              }}
+              className="input-teal font-data pl-8 pr-4 py-2.5 rounded-xl text-sm w-40"
+            />
+          </div>
+          <button
+            type="submit"
+            className="btn-teal flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold"
+          >
+            Allocate
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </form>
+
+      </div>
+    </div>
+  )
 }

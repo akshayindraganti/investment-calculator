@@ -1,226 +1,204 @@
-import {
-    PieChart,
-    Pie,
-    Cell,
-    ResponsiveContainer,
-    Tooltip,
-} from "recharts"
-
+import { PieChart, Pie, ResponsiveContainer, Tooltip } from "recharts"
 import type { CategoryAllocation } from "@/types/allocation"
 import { useEffect, useRef, useMemo } from "react"
 import gsap from "gsap"
 
 type Props = {
-    data: CategoryAllocation[]
+  data: CategoryAllocation[]
 }
 
-/* -------------------- */
-/* Category Colors */
-/* -------------------- */
-
-const CATEGORY_COLORS = {
-    "Large Cap": "#3b82f6",
-    "Mid Cap": "#facc15",
-    "Small Cap": "#22c55e",
-    "Gold & Silver": "#f97316",
+const CATEGORY_COLORS: Record<string, string> = {
+  "Large Cap":     "#4f90f7",
+  "Mid Cap":       "#fbbf24",
+  "Small Cap":     "#34d399",
+  "Gold & Silver": "#f59e0b",
 }
 
-/* -------------------- */
-/* Fund Structure */
-/* -------------------- */
-
+// Fund structure used in tooltip & legend suggestions
 const FUND_STRUCTURE = [
-    { category: "Large Cap", fundName: "Nifty 50", percentage: 25 },
-    { category: "Large Cap", fundName: "Nifty Next 50", percentage: 15 },
-    { category: "Large Cap", fundName: "Nifty Bank", percentage: 10 },
-
-    { category: "Mid Cap", fundName: "Nifty Midcap 150", percentage: 25 },
-
-    { category: "Small Cap", fundName: "Quant Small Cap", percentage: 7.5 },
-    { category: "Small Cap", fundName: "Nippon Small Cap", percentage: 7.5 },
-
-    { category: "Gold & Silver", fundName: "Gold", percentage: 7 },
-    { category: "Gold & Silver", fundName: "Silver", percentage: 3 },
+  { category: "Large Cap",     fundName: "Nifty 50",          percentage: 25  },
+  { category: "Large Cap",     fundName: "Nifty Next 50",     percentage: 15  },
+  { category: "Large Cap",     fundName: "Nifty Bank",        percentage: 10  },
+  { category: "Mid Cap",       fundName: "Nifty Midcap 150",  percentage: 25  },
+  { category: "Small Cap",     fundName: "Quant Small Cap",   percentage: 7.5 },
+  { category: "Small Cap",     fundName: "Nippon Small Cap",  percentage: 7.5 },
+  { category: "Gold & Silver", fundName: "Gold",              percentage: 7   },
+  { category: "Gold & Silver", fundName: "Silver",            percentage: 3   },
 ]
 
-/* -------------------- */
-/* Custom Tooltip */
-/* -------------------- */
+const FUNDS_BY_CATEGORY = FUND_STRUCTURE.reduce<Record<string, typeof FUND_STRUCTURE>>(
+  (acc, fund) => {
+    if (!acc[fund.category]) acc[fund.category] = []
+    acc[fund.category].push(fund)
+    return acc
+  },
+  {}
+)
 
-type CustomTooltipProps = {
-    active?: boolean
-    payload?: {
-        name?: string
-        value?: number
-    }[]
-    totalAmount: number
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+type TooltipPayload = {
+  name?: string | number
+  value?: number | string
 }
 
-const CustomTooltip = ({
-    active,
-    payload,
-    totalAmount,
-}: CustomTooltipProps) => {
-    if (!active || !payload || !payload.length) return null
-
-    const category = payload[0].name
-    const categoryAmount = payload[0].value ?? 0
-
-    if (!category) return null
-
-    const funds = FUND_STRUCTURE.filter(
-        (fund) => fund.category === category
-    )
-
-    return (
-        <div className="bg-white shadow-lg rounded-lg p-3 border text-xs min-w-[220px]">
-            <p className="font-semibold mb-1">{category}</p>
-
-            <p className="text-gray-500 mb-2">
-                ₹ {Number(categoryAmount).toLocaleString()}
-            </p>
-
-            <div className="space-y-1">
-                {funds.map((fund) => {
-                    const fundAmount =
-                        (fund.percentage / 100) * totalAmount
-
-                    return (
-                        <div
-                            key={fund.fundName}
-                            className="flex justify-between"
-                        >
-                            <span>{fund.fundName}</span>
-                            <span>
-                                ₹ {fundAmount.toLocaleString()}
-                            </span>
-                        </div>
-                    )
-                })}
-            </div>
-        </div>
-    )
+type ChartTooltipProps = {
+  active?: boolean
+  payload?: TooltipPayload[]
+  totalAmount: number
 }
 
-/* -------------------- */
-/* Main Component */
-/* -------------------- */
+function ChartTooltip({ active, payload, totalAmount }: ChartTooltipProps) {
+  if (!active || !payload?.length) return null
+  const category     = String(payload[0].name ?? "")
+  const categoryAmt  = Number(payload[0].value ?? 0)
+  if (!category) return null
 
+  const funds = FUNDS_BY_CATEGORY[category] ?? []
+  const color = CATEGORY_COLORS[category] ?? "#ccc"
+
+  return (
+    <div
+      className="rounded-xl p-3.5 text-xs min-w-[210px]"
+      style={{
+        background:  "var(--tooltip-bg)",
+        border:      "1px solid var(--tooltip-border)",
+        boxShadow:   "var(--tooltip-shadow)",
+      }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+        <p className="font-semibold app-t1">{category}</p>
+      </div>
+      <p className="font-data app-t4 text-[11px] mb-3 pl-4">
+        ₹{categoryAmt.toLocaleString("en-IN")}
+      </p>
+
+      {/* Suggested funds */}
+      <p className="text-[9px] font-semibold tracking-[0.1em] app-t5 uppercase pl-4 mb-1.5">
+        Suggested Funds
+      </p>
+      <div
+        className="space-y-2 pt-2"
+        style={{ borderTop: "1px solid var(--divider)" }}
+      >
+        {funds.map((fund) => (
+          <div key={fund.fundName} className="flex justify-between items-center gap-4">
+            <span className="app-t4">{fund.fundName}</span>
+            <span className="font-data app-t2 font-medium">
+              ₹{((fund.percentage / 100) * totalAmount).toLocaleString("en-IN")}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Chart ────────────────────────────────────────────────────────────────────
 export default function CategoryChart({ data }: Props) {
-    const containerRef = useRef<HTMLDivElement | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-    // Dynamic total based on input
-    const total = useMemo(
-        () =>
-            data.reduce(
-                (acc, item) => acc + item.amount,
-                0
-            ),
-        [data]
-    )
+  const total = useMemo(() => data.reduce((acc, item) => acc + item.amount, 0), [data])
 
-    // Entrance animation
-    useEffect(() => {
-        if (!containerRef.current) return
+  const chartData = useMemo(
+    () => data.map((entry) => ({ ...entry, fill: CATEGORY_COLORS[entry.category] ?? "#ccc" })),
+    [data]
+  )
 
-        const ctx = gsap.context(() => {
-            gsap.fromTo(
-                containerRef.current,
-                { opacity: 0, scale: 0.97 },
-                {
-                    opacity: 1,
-                    scale: 1,
-                    duration: 0.6,
-                    ease: "power3.out",
-                }
-            )
-        }, containerRef)
+  useEffect(() => {
+    if (!containerRef.current) return
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        containerRef.current,
+        { opacity: 0, scale: 0.97 },
+        { opacity: 1, scale: 1, duration: 0.55, ease: "power3.out" }
+      )
+    }, containerRef)
+    return () => ctx.revert()
+  }, [data])
 
-        return () => ctx.revert()
-    }, [data])
+  return (
+    <div ref={containerRef} className="card-surface rounded-2xl p-5 h-full flex flex-col">
+      <p className="text-[10px] app-t5 uppercase tracking-[0.14em] font-semibold mb-5">
+        Allocation Breakdown
+      </p>
 
-    return (
-        <div
-            ref={containerRef}
-            className="bg-white shadow-xl rounded-2xl p-6 border"
-        >
-            <h2 className="text-lg font-semibold text-center mb-6">
-                Category Allocation
-            </h2>
+      {/* Donut chart */}
+      <div className="relative h-52">
+        <ResponsiveContainer>
+          <PieChart>
+            <Pie
+              data={chartData}
+              dataKey="amount"
+              nameKey="category"
+              innerRadius={62}
+              outerRadius={90}
+              paddingAngle={3}
+              animationDuration={700}
+            />
+            <Tooltip
+              content={<ChartTooltip totalAmount={total} />}
+              wrapperStyle={{ zIndex: 1000 }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
 
-            <div className="relative h-[380px]">
-                <ResponsiveContainer>
-                    <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
-                        <Pie
-                            data={data}
-                            dataKey="amount"
-                            nameKey="category"
-                            innerRadius={85}
-                            outerRadius={130}
-                            paddingAngle={3}
-                            animationDuration={700}
-                            activeShape={{
-                                stroke: "#fff",
-                                strokeWidth: 2,
-                            }}
-                        >
-                            {data.map((entry) => (
-                                <Cell
-                                    key={entry.category}
-                                    fill={
-                                        CATEGORY_COLORS[
-                                        entry.category as keyof typeof CATEGORY_COLORS
-                                        ]
-                                    }
-                                />
-                            ))}
-                        </Pie>
-
-                        <Tooltip
-                            content={
-                                <CustomTooltip totalAmount={total} />
-                            }
-                            wrapperStyle={{ zIndex: 1000 }}
-                            cursor={{ fill: "rgba(0,0,0,0.04)" }}
-                        />
-                    </PieChart>
-                </ResponsiveContainer>
-
-                {/* Center Total */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
-                    <p className="text-xs text-gray-500">
-                        Total
-                    </p>
-                    <h3 className="text-xl font-bold">
-                        ₹ {total.toLocaleString()}
-                    </h3>
-                </div>
-            </div>
-
-            {/* Compact Custom Legend */}
-            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-700 text-center">
-                {data.map((item) => (
-                    <div
-                        key={item.category}
-                        className="flex items-center justify-center gap-1.5"
-                    >
-                        <span
-                            className="h-2 w-2 rounded-full"
-                            style={{
-                                backgroundColor:
-                                    CATEGORY_COLORS[
-                                    item.category as keyof typeof CATEGORY_COLORS
-                                    ],
-                            }}
-                        />
-                        <span>{item.category}</span>
-                        <span className="text-gray-400">
-                            {item.percentage}%
-                        </span>
-                    </div>
-                ))}
-            </div>
-
+        {/* Center label */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
+          <p className="text-[9px] app-t5 font-semibold tracking-[0.12em] mb-0.5">TOTAL</p>
+          <p className="text-base font-display app-t1">₹{total.toLocaleString("en-IN")}</p>
         </div>
-    )
+      </div>
+
+      {/* Category legend — with suggested fund names */}
+      <div className="mt-5 space-y-4 flex-1">
+        {data.map((item) => {
+          const color     = CATEGORY_COLORS[item.category] ?? "#ccc"
+          const fundNames = (FUNDS_BY_CATEGORY[item.category] ?? [])
+            .map((f) => f.fundName)
+            .join(" · ")
+
+          return (
+            <div key={item.category}>
+              <div className="flex items-start justify-between text-xs mb-1.5 gap-2">
+                {/* Category + fund names */}
+                <div className="flex items-start gap-2 min-w-0">
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0 mt-1"
+                    style={{ background: color }}
+                  />
+                  <div className="min-w-0">
+                    <p className="app-t3 font-semibold leading-tight">{item.category}</p>
+                    <p className="app-t5 text-[10px] mt-0.5 leading-tight truncate font-data">
+                      {fundNames}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Amount + percentage */}
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="font-data app-t4 text-[11px]">
+                    ₹{item.amount.toLocaleString("en-IN")}
+                  </span>
+                  <span
+                    className="font-data font-semibold w-9 text-right text-[11px]"
+                    style={{ color }}
+                  >
+                    {item.percentage}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="alloc-track ml-4">
+                <div
+                  className="alloc-fill"
+                  style={{ width: `${item.percentage}%`, background: color }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }

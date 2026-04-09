@@ -1,155 +1,164 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, type ReactElement } from "react"
 import type { FundAllocation } from "@/types/allocation"
 import gsap from "gsap"
-import {
-    TrendingUp,
-    Landmark,
-    Banknote,
-    Coins,
-} from "lucide-react"
+import { TrendingUp, Landmark, Banknote, Coins } from "lucide-react"
 
 type Props = {
-    data: FundAllocation[]
+  data: FundAllocation[]
 }
 
-// 🎨 Category color + icon mapping
-const CATEGORY_STYLE = {
-    "Large Cap": {
-        bg: "bg-blue-50",
-        border: "border-blue-200",
-        text: "text-blue-700",
-        icon: <TrendingUp className="w-5 h-5 text-blue-600" />,
-    },
-    "Mid Cap": {
-        bg: "bg-yellow-50",
-        border: "border-yellow-200",
-        text: "text-yellow-700",
-        icon: <Landmark className="w-5 h-5 text-yellow-600" />,
-    },
-    "Small Cap": {
-        bg: "bg-green-50",
-        border: "border-green-200",
-        text: "text-green-700",
-        icon: <Banknote className="w-5 h-5 text-green-600" />,
-    },
-    "Gold & Silver": {
-        bg: "bg-orange-50",
-        border: "border-orange-200",
-        text: "text-orange-700",
-        icon: <Coins className="w-5 h-5 text-orange-600" />,
-    },
+type CategoryMeta = {
+  hex:  string
+  Icon: ReactElement
 }
 
-// 🧠 Clean professional fund naming
-function formatFundName(name: string) {
-    const map: Record<string, string> = {
-        "Nifty 50": "NIFTY 50 Index Fund",
-        "Nifty Next 50": "NIFTY Next 50 Index Fund",
-        "Nifty Bank": "NIFTY Bank ETF",
-        "Nifty Midcap 150": "NIFTY Midcap 150 Index Fund",
-        "Quant Small Cap": "Quant Small Cap Fund",
-        "Nippon Small Cap": "Nippon India Small Cap Fund",
-        Gold: "Gold ETF",
-        Silver: "Silver ETF",
-    }
+const CATEGORY_META: Record<string, CategoryMeta> = {
+  "Large Cap": {
+    hex:  "#4f90f7",
+    Icon: <TrendingUp className="w-4 h-4 text-blue-400" />,
+  },
+  "Mid Cap": {
+    hex:  "#fbbf24",
+    Icon: <Landmark className="w-4 h-4 text-yellow-400" />,
+  },
+  "Small Cap": {
+    hex:  "#34d399",
+    Icon: <Banknote className="w-4 h-4 text-emerald-400" />,
+  },
+  "Gold & Silver": {
+    hex:  "#f59e0b",
+    Icon: <Coins className="w-4 h-4 text-amber-500" />,
+  },
+}
 
-    return map[name] || name
+// Full display names shown in fund rows
+const FUND_LABELS: Record<string, string> = {
+  "Nifty 50":          "Nifty 50 Index",
+  "Nifty Next 50":     "Nifty Next 50 Index",
+  "Nifty Bank":        "Nifty Bank ETF",
+  "Nifty Midcap 150":  "Nifty Midcap 150",
+  "Quant Small Cap":   "Quant Small Cap Fund",
+  "Nippon Small Cap":  "Nippon India Small Cap",
+  "Gold":              "Gold ETF",
+  "Silver":            "Silver ETF",
 }
 
 export default function FundBreakdown({ data }: Props) {
-    const containerRef = useRef<HTMLDivElement | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-    // ✨ Smooth entrance animation
-    useEffect(() => {
-        if (!containerRef.current) return
+  useEffect(() => {
+    if (!containerRef.current) return
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        ".fund-row",
+        { x: -10, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.5, stagger: 0.055, ease: "power3.out" }
+      )
+    }, containerRef)
+    return () => ctx.revert()
+  }, [data])
 
-        const ctx = gsap.context(() => {
-            gsap.fromTo(
-                ".fund-card",
-                { y: 30, opacity: 0 },
-                {
-                    y: 0,
-                    opacity: 1,
-                    duration: 0.6,
-                    stagger: 0.08,
-                    ease: "power3.out",
-                }
-            )
-        }, containerRef)
+  const grouped = data.reduce<Record<string, FundAllocation[]>>((acc, fund) => {
+    if (!acc[fund.category]) acc[fund.category] = []
+    acc[fund.category].push(fund)
+    return acc
+  }, {})
 
-        return () => ctx.revert()
-    }, [data])
+  return (
+    <div ref={containerRef} className="card-surface rounded-2xl p-5 h-full flex flex-col gap-4">
+      <p className="text-[10px] app-t5 uppercase tracking-[0.14em] font-semibold shrink-0">
+        Fund Breakdown
+      </p>
 
-    // Group by category
-    const grouped = data.reduce((acc, fund) => {
-        if (!acc[fund.category]) {
-            acc[fund.category] = []
-        }
-        acc[fund.category].push(fund)
-        return acc
-    }, {} as Record<string, FundAllocation[]>)
+      <div className="space-y-4 flex-1">
+        {Object.entries(grouped).map(([category, funds]) => {
+          const meta = CATEGORY_META[category]
+          if (!meta) return null
 
-    return (
-        <div ref={containerRef} className="space-y-16">
-            {Object.entries(grouped).map(([category, funds]) => {
-                const style =
-                    CATEGORY_STYLE[
-                    category as keyof typeof CATEGORY_STYLE
-                    ]
+          const categoryTotal = funds.reduce((a, f) => a + f.amount, 0)
+          const categoryPct   = funds.reduce((a, f) => a + f.percentage, 0)
 
-                return (
-                    <div key={category}>
-                        {/* Category Header */}
-                        <div className="flex items-center gap-3 mb-8">
-                            <div className="p-2 rounded-xl bg-white shadow-sm">
-                                {style.icon}
-                            </div>
-                            <h2
-                                className={`text-2xl font-bold tracking-tight ${style.text}`}
-                            >
-                                {category} Portfolio
-                            </h2>
-                        </div>
+          // Short fund names for the "Suggested" subtitle (e.g. "Nifty 50 · Next 50 · Bank")
+          const suggestedNames = funds.map((f) => f.fundName).join(" · ")
 
-                        {/* Fund Cards */}
-                        <div className="grid md:grid-cols-2 gap-6">
-                            {funds.map((fund) => (
-                                <div
-                                    key={fund.fundName}
-                                    className={`fund-card p-6 rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300 ${style.bg} ${style.border}`}
-                                >
-                                    {/* Top Section */}
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div>
-                                            <p className="text-lg font-semibold leading-tight">
-                                                {formatFundName(fund.fundName)}
-                                            </p>
-                                            <p className="text-xs uppercase tracking-wide opacity-60">
-                                                {category}
-                                            </p>
-                                        </div>
+          return (
+            <div
+              key={category}
+              className="rounded-xl overflow-hidden"
+              style={{ background: `${meta.hex}10`, border: `1px solid ${meta.hex}22` }}
+            >
+              {/* ── Category header ──────────────────────────── */}
+              <div
+                className="flex items-center justify-between px-4 py-3"
+                style={{ borderBottom: `1px solid ${meta.hex}18` }}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: `${meta.hex}18`, border: `1px solid ${meta.hex}30` }}
+                  >
+                    {meta.Icon}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold app-t2">{category}</p>
+                    <p
+                      className="text-[9px] font-semibold tracking-[0.1em]"
+                      style={{ color: meta.hex }}
+                    >
+                      {categoryPct}% ALLOCATION
+                    </p>
+                    {/* Suggested fund names */}
+                    <p className="text-[9px] app-t5 mt-0.5 font-data truncate">
+                      {suggestedNames}
+                    </p>
+                  </div>
+                </div>
 
-                                        <span className="text-sm font-semibold bg-white/60 px-3 py-1 rounded-full">
-                                            {fund.percentage}%
-                                        </span>
-                                    </div>
+                <p
+                  className="font-data font-semibold text-[13px] shrink-0 ml-3"
+                  style={{ color: meta.hex }}
+                >
+                  ₹{categoryTotal.toLocaleString("en-IN")}
+                </p>
+              </div>
 
-                                    {/* Bottom Section */}
-                                    <div className="flex justify-between items-end">
-                                        <span className="text-2xl font-bold">
-                                            ₹ {fund.amount.toLocaleString()}
-                                        </span>
-
-                                        <span className="text-xs opacity-60">
-                                            Allocated Capital
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+              {/* ── Fund rows ────────────────────────────────── */}
+              <div className="px-4 py-3 space-y-3.5">
+                {funds.map((fund) => (
+                  <div key={fund.fundName} className="fund-row">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-[12px] font-medium app-t3">
+                        {FUND_LABELS[fund.fundName] ?? fund.fundName}
+                      </p>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span
+                          className="text-[10px] font-data font-semibold"
+                          style={{ color: meta.hex }}
+                        >
+                          {fund.percentage}%
+                        </span>
+                        <span className="font-data font-semibold text-[12px] app-t2 min-w-[88px] text-right">
+                          ₹{fund.amount.toLocaleString("en-IN")}
+                        </span>
+                      </div>
                     </div>
-                )
-            })}
-        </div>
-    )
+                    <div className="alloc-track">
+                      <div
+                        className="alloc-fill"
+                        style={{
+                          width:      `${(fund.percentage / categoryPct) * 100}%`,
+                          background: meta.hex,
+                          opacity:    0.65,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
